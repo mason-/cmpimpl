@@ -7,37 +7,43 @@ __mem = [0]
 __pointer = 0
 __result = ""
 
-# インタープリタ
 def interpreter(src, recursive=False):
     #print src
     cmds = list(src)
     global __mem
     global __pointer
     global __result
+    cnt = 0
     for (i,cmd) in zip(range(0, len(cmds)), cmds):
-        if cmd == '+':
-            __mem[__pointer] += 1
-        elif cmd == '-':
-            __mem[__pointer] -= 1
-        elif cmd == '>':
-            __pointer += 1
-            if len(__mem) < __pointer + 1:
-                __mem.append(0)
-        elif cmd == '<':
-            __pointer -= 1
-        elif cmd == '.':
-            __result += chr(__mem[__pointer])
-        elif cmd == ',':
-            __result += str(raw_input())
-        elif cmd == '[':
-            while __mem[__pointer] > 1:
-                # recursive call
-                interpreter(src[ i + 1 : ], True)
+        #print str(cmd) + ":" + str(cnt)
+        if cnt == 0:
+            if cmd == '+':
+                __mem[__pointer] += 1
+            elif cmd == '-':
+                __mem[__pointer] -= 1
+            elif cmd == '>':
+                __pointer += 1
+                if len(__mem) < __pointer + 1:
+                    __mem.append(0)
+            elif cmd == '<':
+                __pointer -= 1
+            elif cmd == '.':
+                __result += chr(__mem[__pointer])
+            elif cmd == ',':
+                __result += str(raw_input())
+
+        if cmd == '[':
+            cnt += 1
+            if cnt == 1:
+                while __mem[__pointer] > 0:
+                    #print "recursive"
+                    interpreter(src[ i + 1 : ], True)
         elif cmd == ']':
-            if recursive:
-                break
-        else:
-            return
+            if cnt > 0:
+                cnt -= 1
+            elif cnt == 0:
+                if recursive:
+                    break
 
 if len(sys.argv) <= 1:
     print 'brain fuck src required.'
