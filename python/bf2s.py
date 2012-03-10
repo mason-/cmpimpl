@@ -38,7 +38,7 @@ def translator(src):
             #__f.writelines("mem[ptr]=getchar();\n");
         elif cmd == '[':
             __f.writelines(str(indent)+":\n");
-            __f.writelines("test byte ptr [esi],0\n");
+            __f.writelines("cmp byte ptr [esi],0\n");
             __f.writelines("jz "+str(indent)+"f\n");
             indent = indent + 1
         elif cmd == ']':
