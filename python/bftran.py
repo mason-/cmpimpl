@@ -52,7 +52,8 @@ def translate(src):
             elif tgt_is_x86:
                 write("movzbl (%esi), %eax")
                 write("movl %eax, (%esp)")
-                write("call _putchar")
+                if tgt == "elf32": write("call putchar")
+                else             : write("call _putchar")
             elif tgt == "win32i":
                 write("movzx eax, byte ptr[esi]")
                 write("mov [esp], eax")
@@ -66,7 +67,8 @@ def translate(src):
                 write("callq _getchar")
                 write("movb %al, (%r12)")
             elif tgt_is_x86:
-                write("call _getchar")
+                if tgt == "elf32": write("call getchar")
+                else             : write("call _getchar")
                 write("movb %al, (%esi)")
             elif tgt == "win32i":
                 write("call _getchar")
@@ -122,7 +124,7 @@ for arg in sys.argv[1::]:
     elif arg == "-mac64" or arg == "-win32i":
         tgt = arg[1::]
         dest = "bf.s"
-    elif arg == "-mac32" or arg == "-win32":
+    elif arg == "-mac32" or arg == "-elf32" or arg == "-win32":
         tgt = arg[1::]
         dest = "bf.s"
         tgt_is_x86 = True
@@ -137,7 +139,7 @@ for arg in sys.argv[1::]:
             exit(1)
 
 if len(srcs) == 0:
-    print "usage: " + sys.argv[0] + " [-c|-mac64|-mac32|-win32|-win32i] source.bf"
+    print "usage: " + sys.argv[0] + " [-c|-mac64|-mac32|-elf32|-win32|-win32i] source.bf"
     exit(1)
 
 if tgt != "": __f = open(dest, "w")
@@ -164,8 +166,12 @@ else:
         write("_mem: .indirect_symbol mem")
         write(".long 0")
     write(".text")
-    write(".globl _main")
-    write("_main:")
+    if tgt == "elf32":
+        write(".globl main")
+        write("main:")
+    else:
+        write(".globl _main")
+        write("_main:")
 
 indent = 0
 if tgt == "c":
@@ -180,7 +186,7 @@ elif tgt == "mac32":
     write("popl %eax")
     write("movl _mem-L0(%eax), %esi")
     write("subl $8, %esp")
-elif tgt == "win32":
+elif tgt_is_x86:
     write("pushl %esi")
     write("subl $4, %esp")
     write("leal mem, %esi")
