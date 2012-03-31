@@ -7,36 +7,39 @@ mem = []
 ptr = 0
 indent = 0
 tgt = ""
-spc = ""
 
 def translate(src):
     #print src
     cmds = list(src)
-    global mem, ptr, indent, tgt, spc
+    global mem, ptr, indent, tgt
     i = 0
     start = []
     while i < len(src):
         cmd = src[i]
         if cmd == '+':
             if tgt == "": mem[ptr] += 1
-            elif tgt == "c": write("(*ptr)++;")
-            elif tgt == "mac64": write("incb (%r12)")
-            elif tgt == "mac32": write("incb (%esi)")
+            elif tgt == "c"     : write("(*ptr)++;")
+            elif tgt == "mac64" : write("incb (%r12)")
+            elif tgt == "mac32" : write("incb (%esi)")
+            elif tgt == "win32i": write("inc byte ptr[esi]")
         elif cmd == '-':
             if tgt == "": mem[ptr] -= 1
-            elif tgt == "c": write("(*ptr)--;")
-            elif tgt == "mac64": write("decb (%r12)")
-            elif tgt == "mac32": write("decb (%esi)")
+            elif tgt == "c"     : write("(*ptr)--;")
+            elif tgt == "mac64" : write("decb (%r12)")
+            elif tgt == "mac32" : write("decb (%esi)")
+            elif tgt == "win32i": write("dec byte ptr[esi]")
         elif cmd == '>':
             if tgt == "": ptr += 1
-            elif tgt == "c": write("ptr++;")
-            elif tgt == "mac64": write("incq %r12")
-            elif tgt == "mac32": write("incl %esi")
+            elif tgt == "c"     : write("ptr++;")
+            elif tgt == "mac64" : write("incq %r12")
+            elif tgt == "mac32" : write("incl %esi")
+            elif tgt == "win32i": write("inc esi")
         elif cmd == '<':
             if tgt == "": ptr -= 1
-            elif tgt == "c": write("ptr--;")
-            elif tgt == "mac64": write("decq %r12")
-            elif tgt == "mac32": write("decl %esi")
+            elif tgt == "c"     : write("ptr--;")
+            elif tgt == "mac64" : write("decq %r12")
+            elif tgt == "mac32" : write("decl %esi")
+            elif tgt == "win32i": write("dec esi")
         elif cmd == '.':
             if tgt == "":
                sys.stdout.write(chr(mem[ptr]))
@@ -49,6 +52,10 @@ def translate(src):
                 write("movzbl (%esi), %eax")
                 write("movl %eax, (%esp)")
                 write("call _putchar")
+            elif tgt == "win32i":
+                write("movzx eax, byte ptr[esi]")
+                write("mov [esp], eax")
+                write("call _putchar")
         elif cmd == ',':
             if tgt == "":
                 mem[ptr] = sys.stdin.read(1)
@@ -60,6 +67,9 @@ def translate(src):
             elif tgt == "mac32":
                 write("call _getchar")
                 write("movb %al, (%esi)")
+            elif tgt == "win32i":
+                write("call _getchar")
+                write("mov byte ptr[esi], al")
         elif cmd == '[':
             if tgt == "":
                 start.append(i)
@@ -79,11 +89,12 @@ def translate(src):
                     indent -= 1
             elif tgt == "c":
                 write("while (*ptr) {")
-            elif tgt == "mac64" or tgt == "mac32":
-                write(str(indent) + ":", False)
-                if   tgt == "mac64": write("cmpb $0, (%r12)")
-                elif tgt == "mac32": write("cmpb $0, (%esi)")
-                write("jz " + str(indent) + "f")
+            else:
+                write("%d:" % indent, False);
+                if   tgt == "mac64" : write("cmpb $0, (%r12)")
+                elif tgt == "mac32" : write("cmpb $0, (%esi)")
+                elif tgt == "win32i": write("cmp byte ptr[esi], 0")
+                write("jz %df" % indent)
             indent += 1
         elif cmd == ']':
             if indent == 0:
@@ -94,9 +105,9 @@ def translate(src):
                 i = start.pop() - 1
             elif tgt == "c":
                 write("}")
-            elif tgt == "mac64" or tgt == "mac32":
-                write("jmp "+str(indent)+"b");
-                write(str(indent)+":", False);
+            else:
+                write("jmp %db" % indent)
+                write("%d:" % indent, False)
         i += 1
 
 bf_src = ""
@@ -107,7 +118,7 @@ for arg in sys.argv[1::]:
     if arg == "-c":
         tgt = "c"
         dest = "bf.c"
-    elif arg == "-mac64" or arg == "-mac32":
+    elif arg == "-mac64" or arg == "-mac32" or arg == "-win32i":
         tgt = arg[1::]
         dest = "bf.s"
     else:
@@ -121,7 +132,7 @@ for arg in sys.argv[1::]:
             exit(1)
 
 if len(srcs) == 0:
-    print "usage: " + sys.argv[0] + " [-c|-mac64|-mac32] source.bf"
+    print "usage: " + sys.argv[0] + " [-c|-mac64|-mac32|-win32i] source.bf"
     exit(1)
 
 if tgt != "": __f = open(dest, "w")
@@ -139,8 +150,9 @@ elif tgt == "c":
     write("#include <stdlib.h>")
     write("char mem[30000];")
     write("int main(void) {")
-elif tgt == "mac64" or tgt == "mac32":
+else:
     write("# " + tgt)
+    if tgt == "win32i": write(".intel_syntax noprefix")
     write(".comm mem, 30000")
     if tgt == "mac32":
         write(".section __IMPORT,__pointers,non_lazy_symbol_pointers")
@@ -149,6 +161,7 @@ elif tgt == "mac64" or tgt == "mac32":
     write(".text")
     write(".globl _main")
     write("_main:")
+
 indent = 0
 if tgt == "c":
     write("char *ptr = mem;")
@@ -162,6 +175,10 @@ elif tgt == "mac32":
     write("popl %eax")
     write("movl _mem-L0(%eax), %esi")
     write("subl $8, %esp")
+elif tgt == "win32i":
+    write("push esi")
+    write("sub esp, 4")
+    write("lea esi, mem")
 
 # トランスレータ実行
 translate(bf_src)
@@ -177,6 +194,11 @@ elif tgt == "mac32":
     write("addl $8, %esp")
     write("popl %esi")
     write("movl $0, %eax")
+    write("ret")
+elif tgt == "win32i":
+    write("add esp, 4")
+    write("pop esi")
+    write("mov eax, 0")
     write("ret")
 
 if tgt != "": __f.close()
