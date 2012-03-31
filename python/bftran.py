@@ -9,6 +9,8 @@ indent = 0
 tgt = ""
 tgt_is_x86  = False
 tgt_is_x86i = False
+tgt_is_x64  = False
+tgt_is_mac  = False
 tgt_is_elf  = False
 
 def translate(src):
@@ -21,38 +23,37 @@ def translate(src):
         cmd = src[i]
         if cmd == '+':
             if tgt == "": mem[ptr] += 1
-            elif tgt == "c"    : write("(*ptr)++;")
-            elif tgt == "mac64": write("incb (%r12)")
-            elif tgt_is_x86    : write("incb (%esi)")
-            elif tgt_is_x86i   : write("inc byte ptr[esi]")
+            elif tgt == "c" : write("(*ptr)++;")
+            elif tgt_is_x64 : write("incb (%r12)")
+            elif tgt_is_x86 : write("incb (%esi)")
+            elif tgt_is_x86i: write("inc byte ptr[esi]")
         elif cmd == '-':
             if tgt == "": mem[ptr] -= 1
-            elif tgt == "c"    : write("(*ptr)--;")
-            elif tgt == "mac64": write("decb (%r12)")
-            elif tgt_is_x86    : write("decb (%esi)")
-            elif tgt_is_x86i   : write("dec byte ptr[esi]")
+            elif tgt == "c" : write("(*ptr)--;")
+            elif tgt_is_x64 : write("decb (%r12)")
+            elif tgt_is_x86 : write("decb (%esi)")
+            elif tgt_is_x86i: write("dec byte ptr[esi]")
         elif cmd == '>':
             if tgt == "": ptr += 1
-            elif tgt == "c"    : write("ptr++;")
-            elif tgt == "mac64": write("incq %r12")
-            elif tgt_is_x86    : write("incl %esi")
-            elif tgt_is_x86i   : write("inc esi")
+            elif tgt == "c" : write("ptr++;")
+            elif tgt_is_x64 : write("incq %r12")
+            elif tgt_is_x86 : write("incl %esi")
+            elif tgt_is_x86i: write("inc esi")
         elif cmd == '<':
             if tgt == "": ptr -= 1
-            elif tgt == "c"    : write("ptr--;")
-            elif tgt == "mac64": write("decq %r12")
-            elif tgt_is_x86    : write("decl %esi")
-            elif tgt_is_x86i   : write("dec esi")
+            elif tgt == "c" : write("ptr--;")
+            elif tgt_is_x64 : write("decq %r12")
+            elif tgt_is_x86 : write("decl %esi")
+            elif tgt_is_x86i: write("dec esi")
         elif cmd == '.':
             if tgt == "":
                sys.stdout.write(chr(mem[ptr]))
             elif tgt == "c":
                 write("putchar(*ptr);")
-            elif tgt == "mac64":
-                write("movzbl (%r12), %edi")
-                write("callq _putchar")
             else:
-                if tgt_is_x86:
+                if tgt_is_x64:
+                    write("movzbl (%r12), %edi")
+                elif tgt_is_x86:
                     write("movzbl (%esi), %eax")
                     write("movl %eax, (%esp)")
                 elif tgt_is_x86i:
@@ -65,14 +66,12 @@ def translate(src):
                 mem[ptr] = sys.stdin.read(1)
             elif tgt == "c":
                 write("*ptr = getchar();")
-            elif tgt == "mac64":
-                write("callq _getchar")
-                write("movb %al, (%r12)")
             else:
                 if tgt_is_elf: write("call getchar")
                 else         : write("call _getchar")
-                if tgt_is_x86: write("movb %al, (%esi)")
-                else         : write("mov byte ptr[esi], al")
+                if   tgt_is_x64 : write("movb %al, (%r12)")
+                elif tgt_is_x86 : write("movb %al, (%esi)")
+                elif tgt_is_x86i: write("mov byte ptr[esi], al")
         elif cmd == '[':
             if tgt == "":
                 start.append(i)
@@ -94,9 +93,9 @@ def translate(src):
                 write("while (*ptr) {")
             else:
                 write("%d:" % indent, False);
-                if   tgt == "mac64": write("cmpb $0, (%r12)")
-                elif tgt_is_x86    : write("cmpb $0, (%esi)")
-                elif tgt_is_x86i   : write("cmp byte ptr[esi], 0")
+                if   tgt_is_x64 : write("cmpb $0, (%r12)")
+                elif tgt_is_x86 : write("cmpb $0, (%esi)")
+                elif tgt_is_x86i: write("cmp byte ptr[esi], 0")
                 write("jz %df" % indent)
             indent += 1
         elif cmd == ']':
@@ -121,17 +120,18 @@ for arg in sys.argv[1:]:
     if arg == "-c":
         tgt = "c"
         dest = "bf.c"
-    elif arg == "-mac64":
+    elif arg == "-mac64" or arg == "-elf64":
         tgt = arg[1:]
+        tgt_is_x64 = True
         dest = "bf.s"
     elif arg == "-mac32" or arg == "-elf32" or arg == "-win32":
         tgt = arg[1:]
-        dest = "bf.s"
         tgt_is_x86 = True
+        dest = "bf.s"
     elif arg == "-elf32i" or arg == "-win32i":
         tgt = arg[1:]
-        dest = "bf.s"
         tgt_is_x86i = True
+        dest = "bf.s"
     else:
         if os.path.isfile(arg):
             srcs.append(arg)
@@ -143,10 +143,11 @@ for arg in sys.argv[1:]:
             exit(1)
 
 if len(srcs) == 0:
-    print "usage: " + sys.argv[0] + " [-c|-mac64|-mac32|-elf32[i]|-win32[i]] source.bf"
+    print "usage: " + sys.argv[0] + " [-c|-mac64|-mac32|-elf64|-elf32[i]|-win32[i]] source.bf"
     exit(1)
 
 if tgt != "": __f = open(dest, "w")
+tgt_is_mac = tgt[:3] == "mac"
 tgt_is_elf = tgt[:3] == "elf"
 
 def write(line, is_indent = True):
@@ -181,9 +182,6 @@ else:
 indent = 0
 if tgt == "c":
     write("char *ptr = mem;")
-elif tgt == "mac64":
-    write("pushq %r12")
-    write("movq mem@GOTPCREL(%rip), %r12")
 elif tgt == "mac32":
     write("pushl %esi")
     write("call L0")
@@ -191,6 +189,10 @@ elif tgt == "mac32":
     write("popl %eax")
     write("movl _mem-L0(%eax), %esi")
     write("subl $8, %esp")
+elif tgt_is_x64:
+    write("pushq %r12")
+    if tgt_is_mac: write("movq mem@GOTPCREL(%rip), %r12")
+    else         : write("leaq mem, %r12")
 elif tgt_is_x86:
     write("pushl %esi")
     write("subl $4, %esp")
@@ -206,12 +208,12 @@ translate(bf_src)
 if tgt == "c":
     write("return 0;")
     write("}", False)
-elif tgt == "mac64":
+elif tgt_is_x64:
     write("popq %r12")
     write("movq $0, %rax")
     write("ret")
 elif tgt_is_x86:
-    write("addl $%d, %%esp" % (8 if tgt == "mac32" else 4))
+    write("addl $%d, %%esp" % (8 if tgt_is_mac else 4))
     write("popl %esi")
     write("movl $0, %eax")
     write("ret")
