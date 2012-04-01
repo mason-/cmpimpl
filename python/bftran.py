@@ -11,7 +11,9 @@ is_x64 = False
 is_x86 = False
 is_att = False
 is_mac = False
+is_win = False
 is_elf = False
+prefix = ""
 
 def translate(src):
     #print src
@@ -65,26 +67,26 @@ def translate(src):
             else:
                 if is_att:
                     if is_x64:
-                        write("movzbl (%r12), %edi")
+                        if is_win: write("movzbl (%r12), %ecx")
+                        else     : write("movzbl (%r12), %edi")
                     elif is_x86:
                         write("movzbl (%esi), %eax")
                         write("movl %eax, (%esp)")
                 else:
                     if is_x64:
-                        write("movzx edi, byte ptr[r12]")
+                        if is_win: write("movzx ecx, byte ptr[r12]")
+                        else     : write("movzx edi, byte ptr[r12]")
                     elif is_x86:
                         write("movzx eax, byte ptr[esi]")
                         write("mov [esp], eax")
-                if is_elf: write("call putchar")
-                else     : write("call _putchar")
+                write("call " + prefix + "putchar")
         elif cmd == ',':
             if tgt == "":
                 mem[ptr] = sys.stdin.read(1)
             elif tgt == "c":
                 write("*ptr = getchar();")
             else:
-                if is_elf: write("call getchar")
-                else     : write("call _getchar")
+                write("call " + prefix + "getchar")
                 if is_att:
                     if   is_x64: write("movb %al, (%r12)")
                     elif is_x86: write("movb %al, (%esi)")
@@ -142,12 +144,13 @@ for arg in sys.argv[1:]:
     if arg == "-c":
         tgt = "c"
         dest = "bf.c"
-    elif arg == "-mac64" or arg == "-elf64" or arg == "-elf64i":
+    elif arg == "-mac64" or arg == "-win64" or arg == "-win64i" or \
+         arg == "-elf64" or arg == "-elf64i":
         tgt = arg[1:]
         is_x64 = True
         dest = "bf.s"
-    elif arg == "-mac32" or arg == "-elf32" or arg == "-win32" or \
-         arg == "-elf32i" or arg == "-win32i":
+    elif arg == "-mac32" or arg == "-win32" or arg == "-win32i" or \
+         arg == "-elf32" or arg == "-elf32i":
         tgt = arg[1:]
         is_x86 = True
         dest = "bf.s"
@@ -162,13 +165,16 @@ for arg in sys.argv[1:]:
             exit(1)
 
 if len(srcs) == 0:
-    print "usage: " + sys.argv[0] + " [-c|-mac64|-mac32|-elf64[i]|-elf32[i]|-win32[i]] source.bf"
+    print "usage: " + sys.argv[0] + \
+          " [-c|-mac64|-mac32|-win64[i]|-win32[i]|-elf64[i]|-elf32[i]] source.bf"
     exit(1)
 
 if tgt != "": __f = open(dest, "w")
 is_mac = tgt[:3] == "mac"
+is_win = tgt[:3] == "win"
 is_elf = tgt[:3] == "elf"
 is_att = tgt[-1:] != "i"
+if is_mac or (is_win and is_x86): prefix = "_"
 
 def write(line, is_indent = True):
     global __f, indent
@@ -192,12 +198,8 @@ else:
         write("_mem: .indirect_symbol mem")
         write(".long 0")
     write(".text")
-    if is_elf:
-        write(".globl main")
-        write("main:")
-    else:
-        write(".globl _main")
-        write("_main:")
+    write(".globl " + prefix + "main")
+    write(prefix + "main:")
 
 indent = 0
 if tgt == "c":
@@ -212,6 +214,7 @@ elif tgt == "mac32":
 elif is_att:
     if is_x64:
         write("pushq %r12")
+        if is_win: write("subq $32, %rsp")
         if is_mac: write("movq mem@GOTPCREL(%rip), %r12")
         else     : write("leaq mem, %r12")
     elif is_x86:
@@ -221,6 +224,7 @@ elif is_att:
 else:
     if is_x64:
         write("push r12")
+        if is_win: write("sub rsp, 32")
         write("lea r12, mem")
     elif is_x86:
         write("push esi")
@@ -235,6 +239,7 @@ if tgt == "c":
     write("}", False)
 elif is_att:
     if is_x64:
+        if is_win: write("addq $32, %rsp")
         write("popq %r12")
         write("movq $0, %rax")
         write("ret")
@@ -245,6 +250,7 @@ elif is_att:
         write("ret")
 else:
     if is_x64:
+        if is_win: write("add rsp, 32")
         write("pop r12")
         write("mov rax, 0")
         write("ret")
