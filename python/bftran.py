@@ -17,7 +17,6 @@ prefix = ""
 
 def translate(src):
     #print src
-    cmds = list(src)
     global mem, ptr, indent
     i = 0
     start = []
@@ -177,7 +176,6 @@ is_att = tgt[-1:] != "i"
 if is_mac or (is_win and is_x86): prefix = "_"
 
 def write(line, is_indent = True):
-    global __f, indent
     if is_indent: __f.write(" " * (indent * 4 + 4))
     __f.write(line + "\n")
 
