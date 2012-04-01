@@ -30,8 +30,8 @@ def translate(src):
                 if   is_x64: write("incb (%r12)")
                 elif is_x86: write("incb (%esi)")
             else:
-                if   is_x64: write("inc byte ptr[r12]")
-                elif is_x86: write("inc byte ptr[esi]")
+                if   is_x64: write("inc byte ptr [r12]")
+                elif is_x86: write("inc byte ptr [esi]")
         elif cmd == '-':
             if tgt == "": mem[ptr] -= 1
             elif tgt == "c": write("(*ptr)--;")
@@ -39,8 +39,8 @@ def translate(src):
                 if   is_x64: write("decb (%r12)")
                 elif is_x86: write("decb (%esi)")
             else:
-                if   is_x64: write("dec byte ptr[r12]")
-                elif is_x86: write("dec byte ptr[esi]")
+                if   is_x64: write("dec byte ptr [r12]")
+                elif is_x86: write("dec byte ptr [esi]")
         elif cmd == '>':
             if tgt == "": ptr += 1
             elif tgt == "c": write("ptr++;")
@@ -74,10 +74,10 @@ def translate(src):
                         write("movl %eax, (%esp)")
                 else:
                     if is_x64:
-                        if is_win: write("movzx ecx, byte ptr[r12]")
-                        else     : write("movzx edi, byte ptr[r12]")
+                        if is_win: write("movzx ecx, byte ptr [r12]")
+                        else     : write("movzx edi, byte ptr [r12]")
                     elif is_x86:
-                        write("movzx eax, byte ptr[esi]")
+                        write("movzx eax, byte ptr [esi]")
                         write("mov [esp], eax")
                 write("call " + prefix + "putchar")
         elif cmd == ',':
@@ -91,8 +91,8 @@ def translate(src):
                     if   is_x64: write("movb %al, (%r12)")
                     elif is_x86: write("movb %al, (%esi)")
                 else:
-                    if   is_x64: write("mov byte ptr[r12], al")
-                    elif is_x86: write("mov byte ptr[esi], al")
+                    if   is_x64: write("mov byte ptr [r12], al")
+                    elif is_x86: write("mov byte ptr [esi], al")
         elif cmd == '[':
             if tgt == "":
                 start.append(i)
@@ -118,8 +118,8 @@ def translate(src):
                     if   is_x64: write("cmpb $0, (%r12)")
                     elif is_x86: write("cmpb $0, (%esi)")
                 else:
-                    if   is_x64: write("cmp byte ptr[r12], 0")
-                    elif is_x86: write("cmp byte ptr[esi], 0")
+                    if   is_x64: write("cmp byte ptr [r12], 0")
+                    elif is_x86: write("cmp byte ptr [esi], 0")
                 write("jz %df" % indent)
             indent += 1
         elif cmd == ']':
