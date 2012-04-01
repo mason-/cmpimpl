@@ -23,7 +23,7 @@ def translate(src):
         cmd = src[i]
         if cmd == '+':
             if tgt == "": mem[ptr] += 1
-            elif tgt == "c" : write("(*ptr)++;")
+            elif tgt == "c": write("(*ptr)++;")
             elif is_att:
                 if   is_x64: write("incb (%r12)")
                 elif is_x86: write("incb (%esi)")
@@ -32,7 +32,7 @@ def translate(src):
                 elif is_x86: write("inc byte ptr[esi]")
         elif cmd == '-':
             if tgt == "": mem[ptr] -= 1
-            elif tgt == "c" : write("(*ptr)--;")
+            elif tgt == "c": write("(*ptr)--;")
             elif is_att:
                 if   is_x64: write("decb (%r12)")
                 elif is_x86: write("decb (%esi)")
@@ -41,7 +41,7 @@ def translate(src):
                 elif is_x86: write("dec byte ptr[esi]")
         elif cmd == '>':
             if tgt == "": ptr += 1
-            elif tgt == "c" : write("ptr++;")
+            elif tgt == "c": write("ptr++;")
             elif is_att:
                 if   is_x64: write("incq %r12")
                 elif is_x86: write("incl %esi")
