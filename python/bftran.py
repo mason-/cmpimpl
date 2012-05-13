@@ -143,12 +143,14 @@ for arg in sys.argv[1:]:
     if arg == "-c":
         tgt = "c"
         dest = "bf.c"
-    elif arg == "-mac64" or arg == "-win64" or arg == "-win64i" or \
+    elif arg == "-mac64" or arg == "-mac64i" or \
+         arg == "-win64" or arg == "-win64i" or \
          arg == "-elf64" or arg == "-elf64i":
         tgt = arg[1:]
         is_x64 = True
         dest = "bf.s"
-    elif arg == "-mac32" or arg == "-win32" or arg == "-win32i" or \
+    elif arg == "-mac32" or arg == "-mac32i" or \
+         arg == "-win32" or arg == "-win32i" or \
          arg == "-elf32" or arg == "-elf32i":
         tgt = arg[1:]
         is_x86 = True
@@ -165,7 +167,7 @@ for arg in sys.argv[1:]:
 
 if len(srcs) == 0:
     print "usage: " + sys.argv[0] + \
-          " [-c|-mac64|-mac32|-win64[i]|-win32[i]|-elf64[i]|-elf32[i]] source.bf"
+          " [-c|-mac64[i]|-mac32[i]|-win64[i]|-win32[i]|-elf64[i]|-elf32[i]] source.bf"
     exit(1)
 
 if tgt != "": __f = open(dest, "w")
@@ -209,6 +211,13 @@ elif tgt == "mac32":
     write("L0:", False)
     write("popl %eax")
     write("movl _mem-L0(%eax), %esi")
+elif tgt == "mac32i":
+    write("push esi")
+    write("sub esp, 8")
+    write("call L0")
+    write("L0:", False)
+    write("pop eax")
+    write("mov esi, _mem-L0(eax)")
 elif is_att:
     if is_x64:
         write("pushq %r12")
@@ -223,7 +232,8 @@ else:
     if is_x64:
         write("push r12")
         if is_win: write("sub rsp, 32")
-        write("lea r12, mem")
+        if is_mac: write("mov r12, mem@GOTPCREL[rip]")
+        else     : write("lea r12, mem")
     elif is_x86:
         write("push esi")
         write("sub esp, 4")
@@ -253,7 +263,8 @@ else:
         write("mov rax, 0")
         write("ret")
     elif is_x86:
-        write("add esp, 4")
+        write("add esp, %d" % ( 8 if is_mac else 4))
+        write("addl $%d, %%esp" % (8 if is_mac else 4))
         write("pop esi")
         write("mov eax, 0")
         write("ret")
