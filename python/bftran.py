@@ -193,7 +193,7 @@ else:
     write("# " + tgt)
     if not is_att: write(".intel_syntax noprefix")
     write(".comm mem, 30000")
-    if tgt == "mac32":
+    if tgt == "mac32" or tgt == "mac32i":
         write(".section __IMPORT,__pointers,non_lazy_symbol_pointers")
         write("_mem: .indirect_symbol mem")
         write(".long 0")
@@ -217,12 +217,12 @@ elif tgt == "mac32i":
     write("call L0")
     write("L0:", False)
     write("pop eax")
-    write("mov esi, _mem-L0(eax)")
+    write("mov esi, _mem-L0[eax]")
 elif is_att:
     if is_x64:
         write("pushq %r12")
         if is_win: write("subq $32, %rsp")
-        if is_mac: write("movq mem@GOTPCREL(%rip), %r12")
+        if is_mac: write("movq mem@GOTPCREL[%rip], %r12")
         else     : write("leaq mem, %r12")
     elif is_x86:
         write("pushl %esi")
@@ -264,7 +264,6 @@ else:
         write("ret")
     elif is_x86:
         write("add esp, %d" % ( 8 if is_mac else 4))
-        write("addl $%d, %%esp" % (8 if is_mac else 4))
         write("pop esi")
         write("mov eax, 0")
         write("ret")
