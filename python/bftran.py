@@ -81,7 +81,7 @@ def translate(src):
                 write("call " + prefix + "putchar")
         elif cmd == ',':
             if tgt == "":
-                mem[ptr] = sys.stdin.read(1)
+                mem[ptr] = ord(sys.stdin.read(1))
             elif tgt == "c":
                 write("*ptr = getchar();")
             else:
@@ -94,7 +94,6 @@ def translate(src):
                     elif is_x86: write("mov byte ptr [esi], al")
         elif cmd == '[':
             if tgt == "":
-                start.append(i)
                 if mem[ptr] == 0:
                     ind = 0
                     while i < len(src):
@@ -109,6 +108,8 @@ def translate(src):
                         print "block end required."
                         exit(1)
                     indent -= 1
+                else:
+                    start.append(i)
             elif tgt == "c":
                 write("while (*ptr) {")
             else:
