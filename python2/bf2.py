@@ -1,14 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 import sys
-import os
 
-bf = ""
-arg = sys.argv[1]
-if os.path.isfile(arg):
-    f = open(arg)
-    bf += f.read()
-    f.close()
+f = open(sys.argv[1])
+bf = f.read()
+f.close()
 
 cur = 0
 reg = 0
@@ -30,7 +26,9 @@ while cur < len(bf):
     elif bf[cur] == ",":
         mem[reg] = ord(sys.stdin.read(1))
     elif bf[cur] == "[":
-        if mem[reg] == 0:
+        if mem[reg] != 0:
+            begin += [cur]
+        else:
             nest = 0
             while cur < len(bf):
                 if bf[cur] == "[":
@@ -40,9 +38,6 @@ while cur < len(bf):
                     if nest == 0:
                         break
                 cur += 1
-        else:
-            begin.append(cur)
-
     elif bf[cur] == "]":
         cur = begin.pop() - 1
 
