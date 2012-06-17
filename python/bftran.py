@@ -223,7 +223,7 @@ elif is_att:
     if is_x64:
         write("pushq %r12")
         if is_win: write("subq $32, %rsp")
-        if is_mac: write("movq mem@GOTPCREL[%rip], %r12")
+        if is_mac: write("movq mem@GOTPCREL(%rip), %r12")
         else     : write("leaq mem, %r12")
     elif is_x86:
         write("pushl %esi")
