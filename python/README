@@ -1,0 +1,88 @@
+README
+
+usage: ./bftran.py [-c|-mac64[i]|-mac32[i]|-win64[i]|-win32[i]|-elf64[i]|-elf32[i]] source.bf
+
+h2. interpreter
+
+ $ ./bftran.py hoge.bf
+
+h2. c translator
+
+ $ ./bftran.py -c hoge.bf
+ $ gcc bf.c
+ $ ./a.out
+
+h2. assembler translator
+
+ h3. mac64 AT&T syntax
+
+  $ ./bftran.py ../helloworld.bf -mac64
+  $ gcc bf.s
+  $ file a.exe
+  a.out: Mach-O 64-bit executable x86_64
+  $ ./a.out
+
+ h3. mac64i Intel syntax
+
+  $ ./bftran.py ../helloworld.bf -mac64i
+  $ x86_64-darwin-as -o bf.o bf.s
+  $ gcc bf.o
+  $ file a.exe
+  a.out: Mach-O 64-bit executable x86_64
+  $ ./a.out
+
+ h3. mac32 AT&T syntax
+
+  $ ./bftran.py ../helloworld.bf -mac32
+  $ gcc bf.s
+  $ file a.exe
+  a.out: Mach-O executable i386
+  $ ./a.out
+
+ h3. mac32i Intel syntax
+
+  $ ./bftran.py ../helloworld.bf -mac32i
+  $ x386-darwin-as -o bf.o bf.s
+  $ gcc -m32 bf.o
+  $ file a.exe
+  a.out: Mach-O executable i386
+  $ ./a.out
+
+ h3. win64 AT&T syntax
+
+  $ ./bftran.py ../helloworld.bf -win64
+  $ x86_64-pc-mingw32-gcc bf.s
+  $ file a.exe
+  a.exe: PE32+ executable for MS Windows (console) Mono/.Net assembly
+
+ h3. win64i Intel syntax
+
+  $ ./bftran.py ../helloworld.bf -win64i
+  $ x86_64-pc-mingw32-gcc bf.s
+  $ file a.exe
+  a.exe: PE32+ executable for MS Windows (console) Mono/.Net assembly
+
+ h3. win32 AT&T syntax
+
+  $ ./bftran.py ../helloworld.bf -win32
+  $ i386-mingw32-gcc bf.s
+  $ file a.exe
+  a.exe: PE32 executable for MS Windows (console) Intel 80386 32-bit
+  $ wine a.exe
+
+ h3. win32i Intel syntax
+
+  $ ./bftran.py ../helloworld.bf -win32i
+  $ i386-mingw32-gcc bf.s
+  $ file a.exe
+  a.exe: PE32 executable for MS Windows (console) Intel 80386 32-bit
+  $ wine a.exe
+
+ h3. elf64 AT&T syntax
+ h3. elf64i Intel syntax
+ h3. elf32 AT&T syntax
+ h3. elf32i Intel syntax
+
+
+
+
