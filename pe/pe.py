@@ -14,6 +14,9 @@ def conv16(v):
 def conv32(v):
     return map(lambda x: ord(x), pack("<L", v))
 
+def convstr(v):
+    return map(lambda x: ord(x), v)
+
 def write16(p, values):
     for v in values:
         buf[p:p+2] = conv16(v)
@@ -21,7 +24,7 @@ def write16(p, values):
 
 # IMAGE_DOS_HEADER
 buf = (c_ubyte * 0x400)()
-buf[0:2] = [ord("M"), ord("Z")]
+buf[0:2] = convstr("MZ")
 write16(2, [0x90, 3, 0, 4, 0, 0xffff])
 buf[0x10] = 0xb8
 buf[0x18] = 0x40
@@ -30,7 +33,7 @@ buf[0x3c:0x40] = conv32(0x80)
 buf[0x40:0x45] = [0xb8, 0x01, 0x4c, 0xcd, 0x21]
 
 # IMAGE_NT_HEADERS32
-buf[0x80:0x82] = [ord("P"), ord("E")]
+buf[0x80:0x82] = convstr("PE")
 buf[0x84:0x86] = conv16(0x014c)
 buf[0x86:0x88] = conv16(0x0001)
 buf[0x88:0x8c] = conv32(0x4da65f9b)
@@ -61,7 +64,7 @@ buf[0xec:0xf0] = conv32(0x1000)
 buf[0xf4:0xf8] = conv32(0x10)
 # IMAGE_DATA_DIRECTORY
 # IMAGE_SECTION_HEADER
-buf[0x178:0x17d] = [ord("."), ord("t"), ord("e"), ord("x"), ord("t")]
+buf[0x178:0x17d] = convstr(".text")
 buf[0x180:0x184] = conv32(0x1)
 buf[0x184:0x188] = conv32(0x1000)
 buf[0x188:0x18c] = conv32(0x200)
