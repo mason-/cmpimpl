@@ -35,7 +35,9 @@ print "addressof(buf) = " + hex(ctypes.addressof(buf))
 print map(lambda x: hex(x), buf)
 
 data = (ctypes.c_ubyte * 0x64)()
-start = ctypes.addressof(buf) % 16
+#start = ctypes.addressof(buf) % 16
+start = ctypes.addressof(buf) & 0xf
+print start
 data[start:len(buf)+start] = buf
 f = open("strarray.dat", "wb")
 f.write(data)
