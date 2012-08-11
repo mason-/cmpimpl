@@ -2,13 +2,11 @@ import ctypes
 
 def conv32(address):
     result = []
-    print hex(address)
     result.append( address & 0xff)
     result.append( (address >> 8) & 0xff)
     result.append( (address >> 16) & 0xff)
     result.append( (address >> 24) & 0xff)
     return result
-
 
 def makebuf(args):
     i = 0
@@ -35,3 +33,10 @@ buf = makebuf(strs)
 
 print "addressof(buf) = " + hex(ctypes.addressof(buf))
 print map(lambda x: hex(x), buf)
+
+data = (ctypes.c_ubyte * 0x64)()
+start = ctypes.addressof(buf) % 16
+data[start:len(buf)+start] = buf
+f = open("strarray.dat", "wb")
+f.write(data)
+f.close()
